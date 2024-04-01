@@ -1,0 +1,19 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "Manage all api whatever need to front-end side",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhruvparmar08/node-auth.git"
+  },
+  "author": "Dhruv Parmar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dhruvparmar08/node-auth/issues"
+  },
+  "homepage": "https://github.com/dhruvparmar08/node-auth#readme"
+}
