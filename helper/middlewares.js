@@ -1,108 +1,53 @@
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const cryptojs = require('./crypto');
-
+const logger = require('./logger');
 const siteConfig = require('../modals/siteConfig');
+const User = require('../modals/user');
+const userDevice = require('../modals/userdevice');
 
-const routeMiddleWares = (req, res, next) => {
+const routeMiddleWares = async (req, res, next) => {
     const bearerHeader = req.headers['authorization'];
 
-    if (typeof bearerHeader !== 'undefined') {
+    if(bearerHeader && (bearerHeader.includes('Bearer') || bearerHeader.includes('bearer'))) {
         const token = bearerHeader.split(' ')[1];
-        // console.log(token);
-        if (token !== 'null') {
-            return jwt.verify(token, config.secret_key, async (err, userData) => {
-                if (err) {
-                    res.status(401).json({ success: false, message: "User is not authenticated" });
-                }
-                else {
-                    let type = userData.user_role_id;
-                    if (type == 1) {
-                        await knex('Users')
-                            .where({
-                                id: userData.id,
-                                is_active: 'Y',
-                                is_delete: 'N'
-                            })
-                            .then((userdetails) => {
-                                if (userdetails.length > 0) {
-                                    req.user = userData;
-                                    next();
-                                }
-                                else {
-                                    res.status(401).json({ success: false, message: "User is not authenticated" });
-                                }
-                            });
-                    } else if (type == 2) {
-                        await knex('Users')
-                            .where({
-                                id: userData.id,
-                                is_active: 'Y',
-                                is_delete: 'N',
-                                Is_artist_approve: 'Y'
-                            })
-                            .then((userdetails) => {
-                                if (userdetails.length > 0) {
-                                    req.user = userData;
-                                    next();
-                                }
-                                else {
-                                    res.status(401).json({ success: false, message: "User is not authenticated" });
-                                }
-                            });
-                    } else {
-                        await knex('Users')
-                            .where({
-                                id: userData.id,
-                                is_active: 'Y',
-                                is_delete: 'N'
-                            })
-                            .then(async (userdetails) => {
-                                if (userdetails.length > 0) {
-                                    await knex('User device')
-                                        .where({ 'user_id': userData.id })
-                                        .count('*')
-                                        .then(async (countdata) => {
-                                            let device_limit = countdata[0]['count(*)'];
-                                            if (userData.device_limit >= device_limit) {
-                                                await knex('User device')
-                                                    .where({ user_id: userData.id, user_to_user_id: userData.user_to_user_id, is_login: 'Y' })
-                                                    .then(async (userdetails) => {
-                                                        if (userdetails.length > 0) {
-                                                            await knex('User device')
-                                                                .where({ user_id: userData.id, user_to_user_id: userData.user_to_user_id, user_device_token: token, is_login: 'Y' })
-                                                                .then(async (userdetails) => {
-                                                                    if (userdetails.length > 0) {
-                                                                        req.user = userData;
-                                                                        next();
-                                                                    } else {
-                                                                        res.status(401).json({ success: false, message: "User is not authenticated" });
-                                                                    }
-                                                                })
-                                                        } else {
-                                                            res.status(401).json({ success: false, message: "User is not authenticated" });
-                                                        }
-                                                    })
-                                            } else {
-                                                res.status(401).json({ success: false, message: "User is not authenticated" });
-                                            }
-                                        })
-                                }
-                                else {
-                                    res.status(401).json({ success: false, message: "User is not authenticated" });
-                                }
-                            });
+        console.log("token ::", token);
+
+        if(token) {
+            const secret_key = process.env.secret_key;
+
+            try {
+                const userresult = await userDevice.find({token: token, isLogin: true});
+                if(userresult.length > 0) {
+                    try {
+                        const userData = await jwt.verify(token, secret_key);
+
+                        const result = await User.find({_id: userData._id, active: true});
+
+                        if(result.length > 0) {
+                            req.user = userData;
+                            next();
+                        } else {
+                            await userDevice.findByIdAndUpdate({_id: userresult[0]._id}, {token: '', isLogin: false});
+                            res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));                            
+                        }
+                    } catch(err) {
+                        await userDevice.findByIdAndUpdate({_id: userresult[0]._id}, {token: '', isLogin: false});
+                        logger.error("Something went to wrong ::", err);
+                        res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
                     }
+                } else {
+                    res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
                 }
-            })
+            } catch(err) {
+                logger.error("Something went to wrong ::", err);
+                res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
+            }
         } else {
-            console.log("hi");
-            req.user;
-            next();
+            res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
         }
-    }
-    else {
-        res.status(401).json({ success: false, message: "token missing" })
+    } else {
+        res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
     }
 }
 
@@ -141,15 +86,6 @@ const config_details = async (key) => {
 
     console.log("result ::", result);
     return result[0];
-    // return await knex('Site Configuration')
-    //     .select('config_value')
-    //     .where({ 'config_key': key })
-    //     .then(async (configDetails) => {
-
-    //         configDetails = await configDetails[0].config_value
-
-    //         return await configDetails;
-    //     });
 }
 
 const GenerateID = (length) => {

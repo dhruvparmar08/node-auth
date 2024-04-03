@@ -24,14 +24,14 @@ module.exports.encrypt = async (req, res) => {
                 message: "Encrypted data not found",
                 success: false,
                 data: null,
-                success_code: 400
+                success_code: 405
             }
     
-            res.status(400).send(response);
+            res.status(405).send(response);
         }
     } catch(err) {
         logger.error("Something went to wrong ::", err);
-        res.status(400).send(await middlewares.responseMiddleWares('internal_error', false, null, 400));
+        res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
     }
 }
 
@@ -56,13 +56,13 @@ module.exports.decrypt = async (req, res) => {
                 message: "Dencrypted data not found",
                 success: false,
                 data: null,
-                success_code: 400
+                success_code: 405
             }
     
-            res.status(400).send(response);
+            res.status(405).send(response);
         }
     } catch(err) {
         logger.error("Something went to wrong ::", err);
-        res.status(400).send(await middlewares.responseMiddleWares('internal_error', false, null, 400));
+        res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
     }
 }

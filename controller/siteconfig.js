@@ -10,7 +10,7 @@ module.exports.addsiteconfig = async (req, res) => {
         logger.info("Request received on /api/addsiteconfig");
         
         if (!data || !data.config_key || !data.config_value) {
-            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
+            res.status(405).send(await middlewares.responseMiddleWares('fields_required', false, null, 405));
         } else {
             const siteconfig = new siteConfig({
                 config_key: data.config_key,
@@ -22,16 +22,16 @@ module.exports.addsiteconfig = async (req, res) => {
             if (result) {
                 res.status(200).send(await middlewares.responseMiddleWares('add_siteConfig', true, null, 200));
             } else {
-                res.status(400).send(await middlewares.responseMiddleWares('add_not_siteConfig', false, null, 400));
+                res.status(405).send(await middlewares.responseMiddleWares('add_not_siteConfig', false, null, 405));
             }
         }
     } catch (err) {
         console.log("err", err);
         logger.error("Something went to wrong ::", err);
         if (err.code === 11000) {
-            res.status(400).send(await middlewares.responseMiddleWares('unique_error', false, null, 400));
+            res.status(405).send(await middlewares.responseMiddleWares('unique_error', false, null, 405));
         } else {
-            res.status(400).send(await middlewares.responseMiddleWares('internal_error', false, null, 400));
+            res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
         }
     }
 }
@@ -49,6 +49,6 @@ module.exports.getsiteconfig = async (req, res) => {
         }
     } catch (err) {
         logger.error("Something went to wrong ::", err);
-        res.status(400).send(await middlewares.responseMiddleWares('internal_error', false, null, 400));
+        res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
     }
 }

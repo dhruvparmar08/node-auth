@@ -73,17 +73,7 @@ UserSchema.pre('save', async function(next) {
         logger.error("Something went to wrong ::", error);
         return next(error);
       }
-
-    // bcrypt.hash(user.password, null, null, function(err, hash) {
-    //     if (err) return next(err); // Exit if error is found
-    //     user.password = hash; // Assign the hash to the user's password so it is saved in database encrypted
-    //     next(); // Exit Bcrypt function
-    // });
 });
-
-// UserSchema.methods.comparePassword = function(password) {
-//     return bcrypt.compareSync(password, this.password); 
-// };
 
 const User = mongoose.models.users || mongoose.model('users', UserSchema);
 
