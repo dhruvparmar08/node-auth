@@ -11,7 +11,6 @@ const routeMiddleWares = async (req, res, next) => {
 
     if(bearerHeader && (bearerHeader.includes('Bearer') || bearerHeader.includes('bearer'))) {
         const token = bearerHeader.split(' ')[1];
-        console.log("token ::", token);
 
         if(token) {
             const secret_key = process.env.secret_key;
@@ -83,9 +82,7 @@ const responseMiddleWares = async (key, status, data, code) => {
 
 const config_details = async (key) => {
     const result = await siteConfig.find({ config_key: key }, { _id: 0, config_value: 1 });
-
-    console.log("result ::", result);
-    return result[0];
+    return result[0].config_value;
 }
 
 const GenerateID = (length) => {

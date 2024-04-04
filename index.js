@@ -12,7 +12,7 @@ const appRoute = require('./router/app');
 require('dotenv').config();
 
 const connectionString = process.env.connectionString;
-
+app.use(express.static(__dirname+"/logo"));
 app.use(cors({ origin: "http://localhost:4200" }));
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -26,6 +26,7 @@ app.use(function (req, res, next) {
 
     next();
 });
+
 app.use(morgan('dev'));
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true, parameterLimit: 1000000 }));

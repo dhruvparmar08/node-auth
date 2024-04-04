@@ -7,7 +7,9 @@ const UserDeviceSchema = new Schema({
     user_device: { type: String, require: false },
     user_device_type: { type: String, require: false },
     token: { type: String },
-    isLogin: { type: Boolean, default: false }
+    isLogin: { type: Boolean, default: false },
+    resetpwdToken: { type: String },
+    reset_token: { type: Boolean, default: false }
 }, { timestamps: true })
 
 const userDevice = mongoose.models.userdevices || mongoose.model('userdevices', UserDeviceSchema);
