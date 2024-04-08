@@ -25,9 +25,8 @@ module.exports.sendMail = async (data) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-          
-        console.log("Email sent: ", info.response);
+        logger.info("Email send: ", info.response);
     } catch (err) {
-        console.log("err ::", err);
+        logger.error("Error: ", err);
     }
 }

@@ -13,6 +13,8 @@ require('dotenv').config();
 
 const connectionString = process.env.connectionString;
 app.use(express.static(__dirname+"/logo"));
+app.use('/profiles', express.static(__dirname+"/uploads/profiles"));
+
 app.use(cors({ origin: "http://localhost:4200" }));
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -41,7 +43,7 @@ const server = http.createServer(app);
 
 server.setTimeout(60000);
 
-mongoose.connect(connectionString);
+mongoose.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true });
 //mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true,  useCreateIndex: true, useUnifiedTopology: true});
 var conn = mongoose.connection;
 

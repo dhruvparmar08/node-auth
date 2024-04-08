@@ -1,7 +1,10 @@
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const cryptojs = require('./crypto');
+const path = require('path');
+
 const logger = require('./logger');
+
 const siteConfig = require('../modals/siteConfig');
 const User = require('../modals/user');
 const userDevice = require('../modals/userdevice');
@@ -9,36 +12,36 @@ const userDevice = require('../modals/userdevice');
 const routeMiddleWares = async (req, res, next) => {
     const bearerHeader = req.headers['authorization'];
 
-    if(bearerHeader && (bearerHeader.includes('Bearer') || bearerHeader.includes('bearer'))) {
+    if (bearerHeader && (bearerHeader.includes('Bearer') || bearerHeader.includes('bearer'))) {
         const token = bearerHeader.split(' ')[1];
 
-        if(token) {
+        if (token) {
             const secret_key = process.env.secret_key;
 
             try {
-                const userresult = await userDevice.find({token: token, isLogin: true});
-                if(userresult.length > 0) {
+                const userresult = await userDevice.find({ token: token, isLogin: true });
+                if (userresult.length > 0) {
                     try {
                         const userData = await jwt.verify(token, secret_key);
 
-                        const result = await User.find({_id: userData._id, active: true});
+                        const result = await User.find({ _id: userData._id, active: true });
 
-                        if(result.length > 0) {
+                        if (result.length > 0) {
                             req.user = userData;
                             next();
                         } else {
-                            await userDevice.findByIdAndUpdate({_id: userresult[0]._id}, {token: '', isLogin: false});
-                            res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));                            
+                            await userDevice.findByIdAndUpdate({ _id: userresult[0]._id }, { token: '', isLogin: false });
+                            res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
                         }
-                    } catch(err) {
-                        await userDevice.findByIdAndUpdate({_id: userresult[0]._id}, {token: '', isLogin: false});
+                    } catch (err) {
+                        await userDevice.findByIdAndUpdate({ _id: userresult[0]._id }, { token: '', isLogin: false });
                         logger.error("Something went to wrong ::", err);
                         res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
                     }
                 } else {
                     res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
                 }
-            } catch(err) {
+            } catch (err) {
                 logger.error("Something went to wrong ::", err);
                 res.status(401).send(await responseMiddleWares('unauthorization', false, null, 401));
             }
@@ -96,4 +99,35 @@ const GenerateID = (length) => {
     return id;
 }
 
-module.exports = { routeMiddleWares, responseMiddleWares, GenerateID, routeDecryptMiddleWares, config_details }
+//Profile Image
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/profiles/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = function (req, file, cb) {
+    // Allowed file types
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    
+    if (!allowedTypes.includes(file.mimetype)) {
+        const error = new Error('Only JPEG, PNG types are allowed!');
+        error.code = 'LIMIT_FILE_TYPES';
+        return cb(error, false);
+    }
+
+    cb(null, true);
+};
+
+const uploadProfile = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5 // 5 MB limit
+    },
+    fileFilter: fileFilter
+}).single('profile');
+
+module.exports = { routeMiddleWares, responseMiddleWares, GenerateID, routeDecryptMiddleWares, config_details, uploadProfile }

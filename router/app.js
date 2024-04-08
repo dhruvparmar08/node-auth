@@ -12,6 +12,7 @@ const user = require("../controller/user");
 router.post('/register', middlewares.routeDecryptMiddleWares, authentication.register);
 router.post('/login', middlewares.routeDecryptMiddleWares, authentication.login);
 router.post('/forgotpassword', middlewares.routeDecryptMiddleWares, authentication.forgotpassword);
+router.post('/resetpassword', middlewares.routeDecryptMiddleWares, authentication.resetpassword);
 
 // Site config
 router.get('/siteconfig', siteconfig.getsiteconfig);
@@ -21,8 +22,10 @@ router.post('/encrypt', crypto.encrypt);
 router.post('/decrypt', crypto.decrypt);
 
 // Authorization
-
 // Profile
 router.get('/getprofile', middlewares.routeMiddleWares, user.getProfile);
+router.post('/updateprofile', middlewares.routeMiddleWares, middlewares.routeDecryptMiddleWares, user.updateProfile);
+router.post('/uploadprofile', middlewares.routeMiddleWares, middlewares.routeDecryptMiddleWares, user.uploadprofile);
+
 
 module.exports = router;

@@ -54,9 +54,7 @@ const UserSchema = new Schema({
     pincode : { type: String, required: false, minlength:6, maxlength: 6},
     password : { type: String, required: true, validate: passwordValidator}, // select: false
     active: { type: Boolean, default: true },
-    created_at: { type: Date, require: true, default: Date.now },
-    updated_at: { type: Date, require: true, default: Date.now }
-});
+}, { timestamps: true});
 
 
 UserSchema.pre('save', async function(next) {

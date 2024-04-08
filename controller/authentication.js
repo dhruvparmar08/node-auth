@@ -17,7 +17,7 @@ module.exports.register = async (req, res) => {
         logger.info("Request details --->", data);
 
         if (!data || !data.name || !data.mobile || !data.email || !data.password) {
-            res.status(405).send(await middlewares.responseMiddleWares('fields_required', false, null, 405));
+            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
         } else {
             const user = new User({
                 name: data.name,
@@ -31,7 +31,7 @@ module.exports.register = async (req, res) => {
             if (result) {
                 res.status(200).send(await middlewares.responseMiddleWares('user_register', true, null, 200));
             } else {
-                res.status(405).send(await middlewares.responseMiddleWares('user_not_register', false, null, 405));
+                res.status(404).send(await middlewares.responseMiddleWares('user_not_register', false, null, 404));
             }
         }
     } catch (err) {
@@ -40,17 +40,17 @@ module.exports.register = async (req, res) => {
 
         if (err.errors) {
             if (err.errors.name) {
-                res.status(405).send(await middlewares.responseMiddleWares('register_name_validation', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('register_name_validation', false, null, 400));
             } else if (err.errors.mobile) {
-                res.status(405).send(await middlewares.responseMiddleWares('register_mobile_validation', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('register_mobile_validation', false, null, 400));
             } else if (err.errors.email) {
-                res.status(405).send(await middlewares.responseMiddleWares('register_email_validation', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('register_email_validation', false, null, 400));
             } else if (err.errors.password) {
-                res.status(405).send(await middlewares.responseMiddleWares('register_password_validation', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('register_password_validation', false, null, 400));
             }
         } else {
             if (err.code === 11000) {
-                res.status(405).send(await middlewares.responseMiddleWares('unique_register_error', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('unique_register_error', false, null, 400));
             } else {
                 res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
             }
@@ -66,7 +66,7 @@ module.exports.login = async (req, res) => {
         logger.info("Request details --->", authData);
 
         if (!authData && !authData.email && !authData.password) {
-            res.status(405).send(await middlewares.responseMiddleWares('fields_required', false, null, 405));
+            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
         } else {
             const result = await User.find({ email: authData.email });
             if (result.length > 0) {
@@ -105,10 +105,10 @@ module.exports.login = async (req, res) => {
                     }
                     res.status(200).send(await middlewares.responseMiddleWares('user_login', true, data, 200));
                 } else {
-                    res.status(405).send(await middlewares.responseMiddleWares('user_login_fail', false, null, 405));
+                    res.status(400).send(await middlewares.responseMiddleWares('user_login_fail', false, null, 400));
                 }
             } else {
-                res.status(405).send(await middlewares.responseMiddleWares('user_not', false, null, 405));
+                res.status(404).send(await middlewares.responseMiddleWares('user_not', false, null, 404));
             }
         }
     } catch (err) {
@@ -125,7 +125,7 @@ module.exports.forgotpassword = async (req, res) => {
         logger.info("Request details --->", forgotpwdData);
 
         if (!forgotpwdData && !forgotpwdData.email) {
-            res.status(405).send(await middlewares.responseMiddleWares('fields_required', false, null, 405));
+            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
         } else {
             const result = await User.find({ email: forgotpwdData.email, active: true });
 
@@ -186,11 +186,24 @@ module.exports.forgotpassword = async (req, res) => {
 
                 await mailservice.sendMail(mailData);
 
-                await userDevice.updateOne({ user_id: result[0]._id }, { $set: { resetpwdToken: token, reset_token: true }});
+                const forgotpwdUser = await userDevice.find({user_id: new mongoose.Types.ObjectId(result[0]._id)});
+
+                if(forgotpwdUser.length > 0) {
+                    await userDevice.updateOne({ user_id: new mongoose.Types.ObjectId(result[0]._id) }, { $set: { resetpwdToken: token, reset_token: true } });
+                } else {
+                    const userdevice = new userDevice({
+                        user_id: result[0]._id,
+                        resetpwdToken: token, 
+                        reset_token: true
+                    })
+
+                    await userdevice.save();
+                }
+
 
                 res.status(200).send(await middlewares.responseMiddleWares('resetpwd_link_sent', true, null, 200));
             } else {
-                res.status(405).send(await middlewares.responseMiddleWares('user_not', false, null, 405));
+                res.status(404).send(await middlewares.responseMiddleWares('user_not', false, null, 404));
             }
         }
     } catch (err) {
@@ -203,32 +216,39 @@ module.exports.resetpassword = async (req, res) => {
     try {
         const forgotpwdData = req.body;
 
-        logger.info("Request received on /api/forgotpassword");
+        logger.info("Request received on /api/resetpassword");
         logger.info("Request details --->", forgotpwdData);
 
-        if (!forgotpwdData && !forgotpwdData.email && !forgotpwdData.password) {
-            res.status(405).send(await middlewares.responseMiddleWares('fields_required', false, null, 405));
+        if (!forgotpwdData && !forgotpwdData.password && !forgotpwdData.confirmpassword && !forgotpwdData.resetpwdToken && !forgotpwdData.id) {
+            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
         } else {
-            const result = await User.find({ email: forgotpwdData.email });
+            const deviceResult = await userDevice.find({ resetpwdToken: forgotpwdData.resetpwdToken, reset_token: true });
 
-            if (result.length > 0) {
-                const validPassword = await bcrypt.compare(forgotpwdData.password, result[0].password);
+            if (deviceResult.length > 0) {
+                const result = await User.find({ _id: forgotpwdData.id });
 
-                if (validPassword) {
-                    res.status(405).send(await middlewares.responseMiddleWares('forgotpwd_same_as', false, null, 405));
-                } else {
-                    result[0].password = forgotpwdData.password;
-                    result[0].updated_at = new Date();
-                    const updatedresult = await result[0].save();
-                    await mailservice.sendMail(updatedresult);
-                    if (updatedresult) {
-                        res.status(200).send(await middlewares.responseMiddleWares('forgotpwd_updated', true, null, 200));
+                if (result.length > 0) {
+                    const validPassword = await bcrypt.compare(forgotpwdData.password, result[0].password);
+
+                    if (validPassword) {
+                        res.status(400).send(await middlewares.responseMiddleWares('forgotpwd_same_as', false, null, 400));
                     } else {
-                        res.status(405).send(await middlewares.responseMiddleWares('user_not', false, null, 405));
+                        result[0].password = forgotpwdData.password;
+                        result[0].updated_at = new Date();
+                        const updatedresult = await result[0].save();
+
+                        if (updatedresult) {
+                            await userDevice.updateOne({user_id: new mongoose.Types.ObjectId(forgotpwdData.id)}, { resetpwdToken: '', reset_token: false });
+                            res.status(200).send(await middlewares.responseMiddleWares('forgotpwd_updated', true, null, 200));
+                        } else {
+                            res.status(404).send(await middlewares.responseMiddleWares('user_not', false, null, 404));
+                        }
                     }
+                } else {
+                    res.status(404).send(await middlewares.responseMiddleWares('user_not', false, null, 404));
                 }
             } else {
-                res.status(405).send(await middlewares.responseMiddleWares('user_not', false, null, 405));
+                res.status(400).send(await middlewares.responseMiddleWares('resetpwd_link_expired', false, null, 400));
             }
         }
     } catch (err) {
