@@ -5,8 +5,8 @@ const crypto = require('../controller/crypto');
 
 const authentication = require("../controller/authentication");
 const siteconfig = require("../controller/siteconfig");
-
 const user = require("../controller/user");
+const products = require("../controller/products");
 
 // Authentication
 router.post('/register', middlewares.routeDecryptMiddleWares, authentication.register);
@@ -27,5 +27,9 @@ router.get('/getprofile', middlewares.routeMiddleWares, user.getProfile);
 router.post('/updateprofile', middlewares.routeMiddleWares, middlewares.routeDecryptMiddleWares, user.updateProfile);
 router.post('/uploadprofile', middlewares.routeMiddleWares, middlewares.routeDecryptMiddleWares, user.uploadprofile);
 
+// Products
+router.get('/getcategory', middlewares.routeMiddleWares, products.getcategory);
+router.get('/getproducts/:skip/:limit', middlewares.routeMiddleWares, products.getproducts);
+router.get('/getproductdetail/:id', middlewares.routeMiddleWares, products.getproductdetail);
 
 module.exports = router;

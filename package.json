@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/dhruvparmar08/node-auth#readme",
   "dependencies": {
+    "axios": "^1.6.8",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -30,6 +31,7 @@
     "mongoose-validator": "^2.1.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.13",
     "winston": "^3.13.0"
   }
