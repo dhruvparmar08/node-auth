@@ -234,7 +234,6 @@ module.exports.resetpassword = async (req, res) => {
                         res.status(400).send(await middlewares.responseMiddleWares('forgotpwd_same_as', false, null, 400));
                     } else {
                         result[0].password = forgotpwdData.password;
-                        result[0].updated_at = new Date();
                         const updatedresult = await result[0].save();
 
                         if (updatedresult) {
@@ -252,6 +251,22 @@ module.exports.resetpassword = async (req, res) => {
             }
         }
     } catch (err) {
+        logger.error("Something went to wrong ::", err);
+        res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
+    }
+}
+
+module.exports.logout = async (req, res) => {
+    try {
+        logger.info("Request received on /api/login");
+        logger.info("Request details --->", null);
+
+        const user_id = req.user._id;
+        const result = await userDevice.updateMany({user_id: new mongoose.Types.ObjectId(user_id)}, { token: null, isLogin: false });
+        console.log("result --->", result);
+
+        res.status(200).send(await middlewares.responseMiddleWares('logout_res', true, null, 200));
+    } catch(err) {
         logger.error("Something went to wrong ::", err);
         res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
     }

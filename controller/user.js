@@ -5,6 +5,7 @@ const userProfile = require('../modals/profile');
 const fs = require('fs').promises;
 const path = require('path');
 
+const bcrypt = require('bcrypt');
 const middlewares = require('../helper/middlewares');
 const logger = require('../helper/logger');
 
@@ -78,8 +79,8 @@ module.exports.updateProfile = async (req, res) => {
                 if (validationresult.length > 0) {
                     res.status(400).send(await middlewares.responseMiddleWares('unique_register_error', false, null, 400));
                 } else {
-                    const updatedresult = User.updateOne({ _id: req.user._id }, { name: profileData.name, email: profileData.email, mobile: profileData.mobile });
-
+                    const updatedresult = await User.updateOne({ _id: req.user._id }, { name: profileData.name, email: profileData.email, mobile: profileData.mobile });
+                    console.log("updatedresult -->", updatedresult);
                     if (updatedresult) {
                         res.status(200).send(await middlewares.responseMiddleWares('profile_updated', true, null, 200));
                     } else {
@@ -91,6 +92,45 @@ module.exports.updateProfile = async (req, res) => {
             }
         }
     } catch (err) {
+        logger.error("Something went to wrong ::", err);
+        res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
+    }
+}
+
+module.exports.changePassword = async (req, res) => {
+    try {
+        const changepwdData = req.body;
+        const user_id = req.user._id;
+        logger.info("Request received on /api/resetpassword");
+        logger.info("Request details --->", changepwdData);
+
+        if (!changepwdData && !changepwdData.oldpassword && !changepwdData.newpassword) {
+            res.status(400).send(await middlewares.responseMiddleWares('fields_required', false, null, 400));
+        } else {
+            const result = await User.find({_id: user_id});
+            console.log("result", result);
+            if(result.length > 0) {
+                const validOldPassword = await bcrypt.compare(changepwdData.oldpassword, result[0].password);
+                const validPassword = await bcrypt.compare(changepwdData.newpassword, result[0].password);
+
+                if(validOldPassword) {
+                    if (validPassword) {
+                        res.status(400).send(await middlewares.responseMiddleWares('forgotpwd_same_as', false, null, 400));
+                    } else {
+                        result[0].password = changepwdData.newpassword;
+                        
+                        await result[0].save();
+    
+                        res.status(200).send(await middlewares.responseMiddleWares('password_changed', true, null, 200));
+                    }
+                } else {
+                    res.status(400).send(await middlewares.responseMiddleWares('old_pwd_not_match', false, null, 400));
+                }
+            } else {
+                res.status(404).send(await middlewares.responseMiddleWares('user_not', false, null, 404));
+            }
+        }
+    } catch(err) {
         logger.error("Something went to wrong ::", err);
         res.status(500).send(await middlewares.responseMiddleWares('internal_error', false, null, 500));
     }
