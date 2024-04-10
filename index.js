@@ -15,7 +15,7 @@ const connectionString = process.env.connectionString;
 app.use(express.static(__dirname+"/logo"));
 app.use('/profiles', express.static(__dirname+"/uploads/profiles"));
 
-app.use(cors({ origin: "http://localhost:4200" }));
+app.use(cors({ origin: ["http://localhost:4200", "https://dhruv-ecommercesite.netlify.app"] }));
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET, POST, HEAD, OPTIONS, PUT, PATCH, DELETE");
